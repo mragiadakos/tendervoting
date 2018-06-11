@@ -23,13 +23,14 @@ The vote was successful
 
 
 Delivery
-REQUEST for the gonverment
+REQUEST for gonverment to add of the list the voters
 {
     Signature: string
     Data: {
         ID: uuid 
         From: public key as hex
         Voters: array of public keys as hex
+	StartTime: time
         EndTime : time
     }
 }
@@ -37,8 +38,27 @@ RESPONSE
   Error scenarios:
     - The public key of the gonverment is not in the list
 
+
+REQUEST for gonverment to add the poll
+{
+  Signature: string
+  Data: {
+	VotersID: uuid
+	PollHash: string
+	StartTime: time
+	EndTime: time
+  }
+
+}
+  Error scenarios
+    - the VotersID does not exist
+    - the pollhash does not exist
+    - the pollhash is not a directory that contains a correct format of polljson
+    - the pollhash start time and end time, is not between the VotersID StartTime and EndTime
+
+
 Delivery
-REQUEST for the voter
+REQUEST for the voter to vote
 {
     Signature: string
     Data: {
@@ -52,10 +72,11 @@ RESPONSE
   Error scenarios:
     - the voter is not in the system
     - the voter has vote already for the specific PoolHash
-    - the voter is not authorized becaused it passed the EndTime
+    - the voter is not authorized becaused didn't vote between StartTime and the EndTime, for the PollHash
 
 
-Query
+Query Poll
+Path = /poll
 REQUEST
 {
     PollHash: string
@@ -69,3 +90,32 @@ RESPONSE
         NumberOfVotes: int
     }
 }
+
+
+Query Voters' IDs
+REQUEST
+Path = /votersids
+
+RESPONSE
+[{
+  ID: uuid
+  StartTime: time
+  EndTime: time
+  Latest: bool
+}]
+
+
+Query Polls
+REQUEST
+Path = /polls
+
+RESPONSE
+[{
+  PollHash: string
+  StartTime: time
+  EndTime: time
+  Finished: bool
+}]
+
+
+
