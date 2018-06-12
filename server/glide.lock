@@ -1,5 +1,5 @@
-hash: 034825fcd60efc2746407384420da0680a2adef84f96f43f2788c9b87814356c
-updated: 2018-06-10T22:38:31.529811821+03:00
+hash: 2c652063f0c61702d0db334aa245fd3579ee4175b4505e089f7c81dfeb8a882c
+updated: 2018-06-12T21:27:01.861978155+03:00
 imports:
 - name: github.com/agl/ed25519
   version: 5312a61534124124185d41f09206b9fef1d88403
@@ -43,6 +43,8 @@ imports:
   version: 4e18c90494642212ec8f4a64e9328e6a4306a204
 - name: github.com/ipfs/go-ipfs-cmdkit
   version: c2103d7ae7f889e7329673cc3ba55df8b3863b0f
+  subpackages:
+  - files
 - name: github.com/jmhodges/levigo
   version: c42d9e0ca023e2198120196f842701bb4c55d7b9
 - name: github.com/kr/logfmt
@@ -51,6 +53,8 @@ imports:
   version: 18915b5467c77ad8c07a35328c2cab468667a4e8
   subpackages:
   - pb
+- name: github.com/libp2p/go-libp2p-peer
+  version: aa0e03e559bde9d4749ad8e38595e15a6fe808fa
 - name: github.com/minio/sha256-simd
   version: ad98a36ba0da87206e3378c556abbfeaeaa98668
 - name: github.com/pkg/errors
@@ -136,11 +140,65 @@ testImports:
   version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
+- name: github.com/gxed/hashland
+  version: d9f6b97f8db22dd1e090fd0bbbe98f09cc7dd0a8
+  subpackages:
+  - keccakpg
+- name: github.com/ipfs/go-log
+  version: b9df188d0fae32d69c1a519fa81741668a12f55a
+  subpackages:
+  - tracer
+  - tracer/wire
+  - writer
+- name: github.com/libp2p/go-libp2p-pubsub
+  version: a031ab4d1b8142714eec946acb7033abafade3d7
+  subpackages:
+  - pb
+- name: github.com/mattn/go-colorable
+  version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
+- name: github.com/mattn/go-isatty
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
+- name: github.com/minio/blake2b-simd
+  version: 3f5f724cb5b182a5c278d6d3d55b40e7f8c2efb4
+- name: github.com/mitchellh/go-homedir
+  version: 3864e76763d94a6df2f9960b16a20a33da9f9a66
+- name: github.com/mr-tron/base58
+  version: c1bdf7c52f59d6685ca597b9955a443ff95eeee6
+  subpackages:
+  - base58
+- name: github.com/multiformats/go-multiaddr
+  version: 123a717755e0559ec8fda308019cd24e0a37bb07
+- name: github.com/multiformats/go-multiaddr-net
+  version: 97d80565f68c5df715e6ba59c2f6a03d1fc33aaf
+- name: github.com/multiformats/go-multihash
+  version: c5fd85e75c6c9888b604e8f94459631bc626dc07
+- name: github.com/opentracing/opentracing-go
+  version: 6c572c00d1830223701e155de97408483dfcd14a
+  subpackages:
+  - ext
+  - log
 - name: github.com/pmezard/go-difflib
   version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
+- name: github.com/spaolacci/murmur3
+  version: f09979ecbc725b9e6d41a297405f65e7e8804acc
 - name: github.com/stretchr/testify
   version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
   subpackages:
   - assert
+- name: github.com/whyrusleeping/go-logging
+  version: 0457bb6b88fc1973573aaf6b5145d8d3ae972390
+- name: github.com/whyrusleeping/tar-utils
+  version: 8c6c8ba81d5c71fd69c0f48dbde4b2fb422b6dfc
+- name: golang.org/x/crypto
+  version: ab813273cd59e1333f7ae7bff5d027d4aadf528c
+  subpackages:
+  - blake2s
+  - sha3
+- name: golang.org/x/sys
+  version: c11f84a56e43e20a78cee75a7c034031ecf57d1f
+  subpackages:
+  - cpu
+  - unix
+  - windows

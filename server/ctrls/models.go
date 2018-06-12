@@ -4,7 +4,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"os"
 	"time"
+
+	"github.com/satori/go.uuid"
+
+	"github.com/ipfs/go-ipfs-api"
 
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/mragiadakos/tendervoting/server/confs"
@@ -153,6 +159,53 @@ func (p *PollDeliveryData) ValidateGonverment() error {
 		return errors.New("You are not a gonverment.")
 	}
 	return nil
+}
+
+type PollJson struct {
+	Description string
+	Choices     map[string]string
+}
+
+func (p *PollDeliveryData) GetPollJsonFromPollHash() (*PollJson, error) {
+	sh := shell.NewShell(confs.Conf.IpfsConnection)
+	objLs, err := sh.FileList(p.PollHash)
+	if err != nil {
+		return nil, errors.New("Folder from IPFS hash " + p.PollHash + " could not list files: " + err.Error())
+	}
+	pollJsonFound := false
+	hash := ""
+	for _, v := range objLs.Links {
+		if v.Name == "poll.json" {
+			hash = v.Hash
+			pollJsonFound = true
+		}
+	}
+	if !pollJsonFound {
+		return nil, errors.New("Folder from IPFS hash " + p.PollHash + " could not find the poll.json in the folder.")
+	}
+
+	pollFile := uuid.NewV4().String()
+	err = sh.Get(hash, pollFile)
+	if err != nil {
+		return nil, errors.New("Failed to get file poll.json with hash " + p.PollHash + ": " + err.Error())
+	}
+	b, err := ioutil.ReadFile(pollFile)
+	if err != nil {
+		return nil, errors.New("Failed to read file poll.json with hash " + p.PollHash + ": " + err.Error())
+	}
+	os.RemoveAll(pollFile)
+	pj := PollJson{}
+	err = json.Unmarshal(b, &pj)
+	if err != nil {
+		return nil, errors.New("The poll.json has not the correct JSON format: " + err.Error())
+	}
+	if len(pj.Description) == 0 {
+		return nil, errors.New("The poll.json has empty description.")
+	}
+	if len(pj.Choices) == 0 {
+		return nil, errors.New("The poll.json has empty choices.")
+	}
+	return &pj, nil
 }
 
 type ElectionDeliveryData struct {

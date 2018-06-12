@@ -31,6 +31,7 @@ import:
   - proto
 - package: google.golang.org/grpc
   version: v1.12.2
+- package: github.com/libp2p/go-libp2p-peer
 testImport:
 - package: github.com/stretchr/testify
   version: v1.2.1
