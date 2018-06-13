@@ -65,7 +65,6 @@ REQUEST for the voter to vote
         From: public key as hex 
         PollHash: string 
         Choice: string
-        Date: time
     }
 }
 RESPONSE

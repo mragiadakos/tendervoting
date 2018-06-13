@@ -60,6 +60,36 @@ func (app *TVApplication) verifyDelivery(tvd TVDelivery) (uint32, error) {
 		if err == nil {
 			return CodeTypeUnauthorized, errors.New("The poll's hash exists.")
 		}
+	case VOTE:
+		d := tvd.GetVoteDeliveryData()
+		if len(d.PollHash) == 0 {
+			return CodeTypeUnauthorized, errors.New("The poll's hash is empty.")
+		}
+		ps, err := app.state.GetPoll(d.PollHash)
+		if err != nil {
+			return CodeTypeUnauthorized, errors.New("The poll's hash does not exists.")
+		}
+		es, err := app.state.GetElection(ps.ElectionID)
+		if err != nil {
+			return CodeTypeServerError, errors.New("Could not find the election from the poll that exists.")
+		}
+		foundVoter := false
+		for _, v := range es.Voters {
+			if v == d.From {
+				foundVoter = true
+				break
+			}
+		}
+		if !foundVoter {
+			return CodeTypeUnauthorized, errors.New("You don't exist in the list of voters.")
+		}
+		_, ok := ps.Choices[d.Choice]
+		if !ok {
+			return CodeTypeUnauthorized, errors.New("The choice " + d.Choice + " does not exists for poll " + d.PollHash + ".")
+		}
+		if app.state.HasVote(d) {
+			return CodeTypeUnauthorized, errors.New("You voted already for the specific poll.")
+		}
 	}
 	return CodeTypeOK, nil
 }
@@ -80,6 +110,10 @@ func (app *TVApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	case POLL:
 		d := tvd.GetPollDeliveryData()
 		app.state.CreatePoll(d)
+	case VOTE:
+		d := tvd.GetVoteDeliveryData()
+		app.state.CreateVote(d)
+		app.state.AddVoteToThePoll(d)
 	}
 	return types.ResponseDeliverTx{Code: CodeTypeOK}
 }

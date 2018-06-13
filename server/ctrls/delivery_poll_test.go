@@ -97,41 +97,12 @@ func TestPollDeliveryFailOnElectionIDDoesNotExists(t *testing.T) {
 	assert.Equal(t, CodeTypeUnauthorized, resp.Code)
 }
 
-func forTestCreateElection(t *testing.T, app *TVApplication, privk crypto.PrivKey) string {
-	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
-	assert.Nil(t, err)
-
-	pubB, _ := privk.GetPublic().Bytes()
-
-	ed := ElectionDeliveryData{}
-	ed.ID = uuid.NewV4().String()
-	ed.From = hex.EncodeToString(pubB)
-	ed.StartTime = time.Now().UTC()
-	ed.EndTime = time.Now().Add(1 * time.Hour).UTC()
-
-	b, _ := json.Marshal(ed)
-	sign, err := privk.Sign(b)
-	assert.Nil(t, err)
-
-	confs.Conf.GonvermentPublicKeyHex = ed.From
-
-	tvd := TVDelivery{}
-	tvd.Type = ELECTION
-	tvd.Signature = sign
-	tvd.Data = &ed
-
-	tx, _ := json.Marshal(tvd)
-	resp := app.DeliverTx(tx)
-	assert.Equal(t, CodeTypeOK, resp.Code)
-	return ed.ID
-}
-
 func TestPollDeliveryFailOnEmptyPollHash(t *testing.T) {
 	app := NewTVApplication()
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	assert.Nil(t, err)
 
-	electionID := forTestCreateElection(t, app, privk)
+	electionID := forTestCreateElection(t, app, privk, []string{})
 
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
@@ -160,7 +131,7 @@ func TestPollDeliveryFailOnDoesNotHavePollJson(t *testing.T) {
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	assert.Nil(t, err)
 
-	electionID := forTestCreateElection(t, app, privk)
+	electionID := forTestCreateElection(t, app, privk, []string{})
 
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
@@ -200,7 +171,7 @@ func TestPollDeliveryFailOnPollJsonFormatError(t *testing.T) {
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	assert.Nil(t, err)
 
-	electionID := forTestCreateElection(t, app, privk)
+	electionID := forTestCreateElection(t, app, privk, []string{})
 
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
@@ -241,7 +212,7 @@ func TestPollDeliveryFailOnEmptyDescription(t *testing.T) {
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	assert.Nil(t, err)
 
-	electionID := forTestCreateElection(t, app, privk)
+	electionID := forTestCreateElection(t, app, privk, []string{})
 
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
@@ -289,7 +260,7 @@ func TestPollDeliveryFailOnEmptyChoices(t *testing.T) {
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	assert.Nil(t, err)
 
-	electionID := forTestCreateElection(t, app, privk)
+	electionID := forTestCreateElection(t, app, privk, []string{})
 
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
@@ -335,7 +306,7 @@ func TestPollDeliveryFailOnPollExistsAlready(t *testing.T) {
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	assert.Nil(t, err)
 
-	electionID := forTestCreateElection(t, app, privk)
+	electionID := forTestCreateElection(t, app, privk, []string{})
 
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
@@ -386,7 +357,7 @@ func TestPollDeliverySuccesful(t *testing.T) {
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	assert.Nil(t, err)
 
-	electionID := forTestCreateElection(t, app, privk)
+	electionID := forTestCreateElection(t, app, privk, []string{})
 
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}

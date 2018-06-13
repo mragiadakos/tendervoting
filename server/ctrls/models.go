@@ -21,6 +21,7 @@ const (
 	CodeTypeEncodingError uint32 = 1
 	CodeTypeBadNonce      uint32 = 2
 	CodeTypeUnauthorized  uint32 = 3
+	CodeTypeServerError   uint32 = 4
 )
 
 type DeliveryType string
@@ -124,12 +125,9 @@ func (v *TVDelivery) VerifySignature() (bool, error) {
 }
 
 type VoteDeliveryData struct {
-	ID        string
-	From      string
-	PollHash  string
-	Choice    string
-	StartTime time.Time
-	EndTime   time.Time
+	From     string
+	PollHash string
+	Choice   string
 }
 
 func (self *VoteDeliveryData) GetFrom() string {

@@ -12,6 +12,7 @@ var (
 	stateKey       = []byte("stateKey")
 	electionKey    = []byte("election:")
 	pollKey        = []byte("poll:")
+	voteKey        = []byte("vote:")
 	latestElection = []byte("latestElection")
 )
 
@@ -23,6 +24,11 @@ func prefixElection(uuid string) []byte {
 func prefixPoll(hash string) []byte {
 	b := []byte(hash)
 	return append(pollKey, b...)
+}
+
+func prefixVote(vd VoteDeliveryData) []byte {
+	b := []byte(vd.From + "-" + vd.PollHash)
+	return append(voteKey, b...)
 }
 
 type State struct {
@@ -94,8 +100,8 @@ func (s *State) GetPoll(hash string) (*PollState, error) {
 	return &ps, nil
 }
 
-func (s *State) AddVoteToThePoll(hash string, vd VoteDeliveryData) error {
-	ps, err := s.GetPoll(hash)
+func (s *State) AddVoteToThePoll(vd VoteDeliveryData) error {
+	ps, err := s.GetPoll(vd.PollHash)
 	if err != nil {
 		return err
 	}
@@ -107,7 +113,7 @@ func (s *State) AddVoteToThePoll(hash string, vd VoteDeliveryData) error {
 		ps.Choices[vd.Choice] += 1
 	}
 	b, _ := json.Marshal(ps)
-	s.db.Set(prefixPoll(hash), b)
+	s.db.Set(prefixPoll(vd.PollHash), b)
 	return nil
 }
 
@@ -117,8 +123,20 @@ func (s *State) CreatePoll(pd PollDeliveryData) {
 	ps.ElectionID = pd.ElectionID
 	ps.VotedAlready = []string{}
 	ps.Choices = map[string]int{}
+	pj, _ := pd.GetPollJsonFromPollHash()
+	for k, _ := range pj.Choices {
+		ps.Choices[k] = 0
+	}
 	b, _ := json.Marshal(ps)
 	s.db.Set(prefixPoll(ps.PollHash), b)
+}
+
+func (s *State) CreateVote(vd VoteDeliveryData) {
+	s.db.Set(prefixVote(vd), nil)
+}
+
+func (s *State) HasVote(vd VoteDeliveryData) bool {
+	return s.db.Has(prefixVote(vd))
 }
 
 func loadState(db dbm.DB) State {
