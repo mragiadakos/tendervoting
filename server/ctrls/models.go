@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/satori/go.uuid"
 
@@ -138,18 +137,10 @@ type PollDeliveryData struct {
 	From       string
 	PollHash   string
 	ElectionID string
-	StartTime  time.Time
-	EndTime    time.Time
 }
 
 func (self *PollDeliveryData) GetFrom() string {
 	return self.From
-}
-func (p *PollDeliveryData) ValidateTime() error {
-	if p.EndTime.Unix() <= p.StartTime.Unix() {
-		return errors.New("The start is over the end.")
-	}
-	return nil
 }
 
 func (p *PollDeliveryData) ValidateGonverment() error {
@@ -207,22 +198,13 @@ func (p *PollDeliveryData) GetPollJsonFromPollHash() (*PollJson, error) {
 }
 
 type ElectionDeliveryData struct {
-	ID        string
-	From      string
-	Voters    []string
-	EndTime   time.Time
-	StartTime time.Time
+	ID     string
+	From   string
+	Voters []string
 }
 
 func (self *ElectionDeliveryData) GetFrom() string {
 	return self.From
-}
-
-func (e *ElectionDeliveryData) ValidateTime() error {
-	if e.EndTime.Unix() <= e.StartTime.Unix() {
-		return errors.New("The start is over the end.")
-	}
-	return nil
 }
 
 func (e *ElectionDeliveryData) ValidateGonverment() error {

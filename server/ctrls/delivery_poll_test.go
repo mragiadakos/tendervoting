@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 
 	shell "github.com/ipfs/go-ipfs-api"
 	"github.com/satori/go.uuid"
@@ -25,8 +24,6 @@ func TestPollDeliveryFailOnNonGonverment(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 
 	b, _ := json.Marshal(pd)
 	sign, err := privk.Sign(b)
@@ -41,33 +38,6 @@ func TestPollDeliveryFailOnNonGonverment(t *testing.T) {
 	resp := app.DeliverTx(tx)
 	assert.Equal(t, CodeTypeUnauthorized, resp.Code)
 
-}
-
-func TestPollDeliveryFailOnStartTimeTheSameWithEndTime(t *testing.T) {
-	app := NewTVApplication()
-	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
-	assert.Nil(t, err)
-
-	pubB, _ := privk.GetPublic().Bytes()
-	pd := PollDeliveryData{}
-	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = pd.StartTime
-
-	b, _ := json.Marshal(pd)
-	sign, err := privk.Sign(b)
-	assert.Nil(t, err)
-
-	confs.Conf.GonvermentPublicKeyHex = pd.From
-
-	tvd := TVDelivery{}
-	tvd.Type = POLL
-	tvd.Signature = sign
-	tvd.Data = &pd
-
-	tx, _ := json.Marshal(tvd)
-	resp := app.DeliverTx(tx)
-	assert.Equal(t, CodeTypeUnauthorized, resp.Code)
 }
 
 func TestPollDeliveryFailOnElectionIDDoesNotExists(t *testing.T) {
@@ -78,8 +48,6 @@ func TestPollDeliveryFailOnElectionIDDoesNotExists(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = uuid.NewV4().String()
 	b, _ := json.Marshal(pd)
 	sign, err := privk.Sign(b)
@@ -107,8 +75,6 @@ func TestPollDeliveryFailOnEmptyPollHash(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 	b, _ := json.Marshal(pd)
 	sign, err := privk.Sign(b)
@@ -136,8 +102,6 @@ func TestPollDeliveryFailOnDoesNotHavePollJson(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 
 	// we will use a temporary folder
@@ -176,8 +140,6 @@ func TestPollDeliveryFailOnPollJsonFormatError(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 
 	// we will use a temporary folder
@@ -217,8 +179,6 @@ func TestPollDeliveryFailOnEmptyDescription(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 
 	// we will use a temporary folder
@@ -265,8 +225,6 @@ func TestPollDeliveryFailOnEmptyChoices(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 
 	// we will use a temporary folder
@@ -311,8 +269,6 @@ func TestPollDeliveryFailOnPollExistsAlready(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 
 	// we will use a temporary folder
@@ -352,6 +308,53 @@ func TestPollDeliveryFailOnPollExistsAlready(t *testing.T) {
 	assert.Equal(t, CodeTypeUnauthorized, resp.Code)
 }
 
+func TestPollDeliveryFailoOnNotLatestElection(t *testing.T) {
+	app := NewTVApplication()
+	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
+	assert.Nil(t, err)
+
+	oldElectionID := forTestCreateElection(t, app, privk, []string{})
+	forTestCreateElection(t, app, privk, []string{})
+
+	pubB, _ := privk.GetPublic().Bytes()
+	pd := PollDeliveryData{}
+	pd.From = hex.EncodeToString(pubB)
+	pd.ElectionID = oldElectionID
+
+	// we will use a temporary folder
+	tmpFolder := "temporary"
+	os.MkdirAll(tmpFolder, 0755)
+	pj := PollJson{
+		Description: "k",
+		Choices: map[string]string{
+			"k": "k",
+		},
+	}
+	bpj, _ := json.Marshal(pj)
+	err = ioutil.WriteFile(tmpFolder+"/poll.json", bpj, 0755)
+	assert.Nil(t, err)
+	sh := shell.NewShell(confs.Conf.IpfsConnection)
+	hash, err := sh.AddDir(tmpFolder)
+	assert.Nil(t, err)
+	os.RemoveAll(tmpFolder)
+
+	pd.PollHash = hash
+	b, _ := json.Marshal(pd)
+	sign, err := privk.Sign(b)
+	assert.Nil(t, err)
+
+	confs.Conf.GonvermentPublicKeyHex = pd.From
+
+	tvd := TVDelivery{}
+	tvd.Type = POLL
+	tvd.Signature = sign
+	tvd.Data = &pd
+
+	tx, _ := json.Marshal(tvd)
+	resp := app.DeliverTx(tx)
+	assert.Equal(t, CodeTypeUnauthorized, resp.Code)
+}
+
 func TestPollDeliverySuccesful(t *testing.T) {
 	app := NewTVApplication()
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
@@ -362,8 +365,6 @@ func TestPollDeliverySuccesful(t *testing.T) {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 
 	// we will use a temporary folder

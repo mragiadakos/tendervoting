@@ -30,8 +30,6 @@ REQUEST for gonverment to add of the list the voters
         ID: uuid 
         From: public key as hex
         Voters: array of public keys as hex
-	StartTime: time
-        EndTime : time
     }
 }
 RESPONSE
@@ -45,8 +43,6 @@ REQUEST for gonverment to add the poll
   Data: {
 	VotersID: uuid
 	PollHash: string
-	StartTime: time
-	EndTime: time
   }
 
 }
@@ -54,7 +50,6 @@ REQUEST for gonverment to add the poll
     - the VotersID does not exist
     - the pollhash does not exist
     - the pollhash is not a directory that contains a correct format of polljson
-    - the pollhash start time and end time, is not between the VotersID StartTime and EndTime
 
 
 Delivery

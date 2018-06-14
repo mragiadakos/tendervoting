@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 
 	shell "github.com/ipfs/go-ipfs-api"
 	crypto "github.com/libp2p/go-libp2p-crypto"
@@ -25,8 +24,6 @@ func forTestCreateElection(t *testing.T, app *TVApplication, privk crypto.PrivKe
 	ed := ElectionDeliveryData{}
 	ed.ID = uuid.NewV4().String()
 	ed.From = hex.EncodeToString(pubB)
-	ed.StartTime = time.Now().UTC()
-	ed.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	ed.Voters = voters
 
 	b, _ := json.Marshal(ed)
@@ -52,8 +49,6 @@ func forTestCreatePoll(t *testing.T, app *TVApplication, privk crypto.PrivKey, v
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
-	pd.StartTime = time.Now().UTC()
-	pd.EndTime = time.Now().Add(1 * time.Hour).UTC()
 	pd.ElectionID = electionID
 
 	// we will use a temporary folder

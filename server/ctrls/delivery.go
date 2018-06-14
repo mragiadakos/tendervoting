@@ -23,10 +23,6 @@ func (app *TVApplication) verifyDelivery(tvd TVDelivery) (uint32, error) {
 		if err != nil {
 			return CodeTypeUnauthorized, err
 		}
-		err = d.ValidateTime()
-		if err != nil {
-			return CodeTypeUnauthorized, err
-		}
 		err = d.ValidateVoters()
 		if err != nil {
 			return CodeTypeUnauthorized, err
@@ -38,10 +34,6 @@ func (app *TVApplication) verifyDelivery(tvd TVDelivery) (uint32, error) {
 	case POLL:
 		d := tvd.GetPollDeliveryData()
 		err := d.ValidateGonverment()
-		if err != nil {
-			return CodeTypeUnauthorized, err
-		}
-		err = d.ValidateTime()
 		if err != nil {
 			return CodeTypeUnauthorized, err
 		}
@@ -59,6 +51,9 @@ func (app *TVApplication) verifyDelivery(tvd TVDelivery) (uint32, error) {
 		_, err = app.state.GetPoll(d.PollHash)
 		if err == nil {
 			return CodeTypeUnauthorized, errors.New("The poll's hash exists.")
+		}
+		if !app.state.IsLatestElection(d.ElectionID) {
+			return CodeTypeUnauthorized, errors.New("The election's ID is not the latest.")
 		}
 	case VOTE:
 		d := tvd.GetVoteDeliveryData()
@@ -89,6 +84,9 @@ func (app *TVApplication) verifyDelivery(tvd TVDelivery) (uint32, error) {
 		}
 		if app.state.HasVote(d) {
 			return CodeTypeUnauthorized, errors.New("You voted already for the specific poll.")
+		}
+		if !app.state.IsLatestPoll(d.PollHash) {
+			return CodeTypeUnauthorized, errors.New("The poll's hash is not the latest.")
 		}
 	}
 	return CodeTypeOK, nil

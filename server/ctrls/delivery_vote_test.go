@@ -159,6 +159,35 @@ func TestVoteFailOnReVotingOnTheSamePoll(t *testing.T) {
 	assert.Equal(t, CodeTypeUnauthorized, resp.Code)
 }
 
+func TestVoteFailOnNotLatestPoll(t *testing.T) {
+	app := NewTVApplication()
+	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
+	assert.Nil(t, err)
+
+	pubB, _ := privk.GetPublic().Bytes()
+
+	vd := VoteDeliveryData{}
+	vd.From = hex.EncodeToString(pubB)
+	oldPollHash := forTestCreatePoll(t, app, privk, []string{vd.From}, map[string]string{"a": "a", "b": "b"})
+	// new poll hash
+	forTestCreatePoll(t, app, privk, []string{vd.From}, map[string]string{"1": "1", "2": "2"})
+
+	vd.PollHash = oldPollHash
+	vd.Choice = "a"
+	b, _ := json.Marshal(vd)
+	sign, err := privk.Sign(b)
+	assert.Nil(t, err)
+
+	tvd := TVDelivery{}
+	tvd.Type = VOTE
+	tvd.Signature = sign
+	tvd.Data = &vd
+
+	tx, _ := json.Marshal(tvd)
+	resp := app.DeliverTx(tx)
+	assert.Equal(t, CodeTypeUnauthorized, resp.Code)
+}
+
 func TestVoteSuccessful(t *testing.T) {
 	app := NewTVApplication()
 	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)

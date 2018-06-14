@@ -3,7 +3,6 @@ package ctrls
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
 	dbm "github.com/tendermint/tmlibs/db"
 )
@@ -14,6 +13,7 @@ var (
 	pollKey        = []byte("poll:")
 	voteKey        = []byte("vote:")
 	latestElection = []byte("latestElection")
+	latestPoll     = []byte("latestPoll")
 )
 
 func prefixElection(uuid string) []byte {
@@ -39,10 +39,8 @@ type State struct {
 }
 
 type ElectionState struct {
-	ID        string
-	Voters    []string
-	StartTime time.Time
-	EndTime   time.Time
+	ID     string
+	Voters []string
 }
 
 func (s *State) GetElection(uuid string) (*ElectionState, error) {
@@ -63,8 +61,6 @@ func (s *State) CreateElection(ed ElectionDeliveryData) {
 	es := ElectionState{}
 	es.ID = ed.ID
 	es.Voters = ed.Voters
-	es.StartTime = ed.StartTime
-	es.EndTime = ed.EndTime
 	b, _ := json.Marshal(es)
 	s.db.Set(prefixElection(es.ID), b)
 	s.db.Set(latestElection, []byte(es.ID))
@@ -77,6 +73,10 @@ func (s *State) GetLatestElection() (string, error) {
 	}
 	uuid := s.db.Get(latestElection)
 	return string(uuid), nil
+}
+func (s *State) IsLatestElection(id string) bool {
+	uuid := s.db.Get(latestElection)
+	return string(uuid) == id
 }
 
 type PollState struct {
@@ -129,6 +129,21 @@ func (s *State) CreatePoll(pd PollDeliveryData) {
 	}
 	b, _ := json.Marshal(ps)
 	s.db.Set(prefixPoll(ps.PollHash), b)
+	s.db.Set(latestPoll, []byte(ps.PollHash))
+}
+
+func (s *State) GetLatestPoll() (string, error) {
+	has := s.db.Has(latestPoll)
+	if !has {
+		return "", errors.New("There is not any latest poll.")
+	}
+	hash := s.db.Get(latestPoll)
+	return string(hash), nil
+}
+
+func (s *State) IsLatestPoll(id string) bool {
+	hash := s.db.Get(latestPoll)
+	return string(hash) == id
 }
 
 func (s *State) CreateVote(vd VoteDeliveryData) {
