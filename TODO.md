@@ -69,8 +69,8 @@ RESPONSE
     - the voter is not authorized becaused didn't vote between StartTime and the EndTime, for the PollHash
 
 
-Query Poll
-Path = /poll
+Query Votes
+Path = /votes
 REQUEST
 {
     PollHash: string
@@ -78,26 +78,29 @@ REQUEST
 
 RESPONSE
 {
-    Votes:{
-        Choices: map[string]int // the choices and percentage based on the number of voters
-        NumberOfVoters: int
-        NumberOfVotes: int
-    }
+    Choices: map[string]int // the number of votes for each choice
+    NumberOfVotes: int   
 }
 
 
-Query Voters' IDs
+Query Elections
 REQUEST
-Path = /votersids
+Path = /elections
 
 RESPONSE
 [{
   ID: uuid
-  StartTime: time
-  EndTime: time
   Latest: bool
 }]
 
+Query Latest Election
+REQUEST
+Path = /elections/latest
+
+RESPONSE
+[{
+  ID: uuid
+}]
 
 Query Polls
 REQUEST
@@ -106,10 +109,15 @@ Path = /polls
 RESPONSE
 [{
   PollHash: string
-  StartTime: time
-  EndTime: time
-  Finished: bool
+  Latest: bool
 }]
 
+Query Latest Poll
+REQUEST
+Path = /polls/latest
 
+RESPONSE
+[{
+  PollHash: string
+}]
 

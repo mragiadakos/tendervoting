@@ -8,12 +8,14 @@ import (
 )
 
 var (
-	stateKey       = []byte("stateKey")
-	electionKey    = []byte("election:")
-	pollKey        = []byte("poll:")
-	voteKey        = []byte("vote:")
-	latestElection = []byte("latestElection")
-	latestPoll     = []byte("latestPoll")
+	stateKey            = []byte("stateKey")
+	electionKey         = []byte("election:")
+	pollKey             = []byte("poll:")
+	voteKey             = []byte("vote:")
+	currentElectionsKey = []byte("currentElections")
+	currentPollsKey     = []byte("currentPolls")
+	latestElectionKey   = []byte("latestElection")
+	latestPollKey       = []byte("latestPoll")
 )
 
 func prefixElection(uuid string) []byte {
@@ -63,19 +65,33 @@ func (s *State) CreateElection(ed ElectionDeliveryData) {
 	es.Voters = ed.Voters
 	b, _ := json.Marshal(es)
 	s.db.Set(prefixElection(es.ID), b)
-	s.db.Set(latestElection, []byte(es.ID))
+	s.db.Set(latestElectionKey, []byte(es.ID))
+
+	curElsB := s.db.Get(currentElectionsKey)
+	curEls := []ElectionQuery{}
+	json.Unmarshal(curElsB, &curEls)
+	curEls = append(curEls, ElectionQuery{ID: ed.ID, NumberOfVoters: len(ed.Voters)})
+	curElsBRes, _ := json.Marshal(curEls)
+	s.db.Set(currentElectionsKey, curElsBRes)
+}
+
+func (s *State) GetElections() []ElectionQuery {
+	curElsB := s.db.Get(currentElectionsKey)
+	curEls := []ElectionQuery{}
+	json.Unmarshal(curElsB, &curEls)
+	return curEls
 }
 
 func (s *State) GetLatestElection() (string, error) {
-	has := s.db.Has(latestElection)
+	has := s.db.Has(latestElectionKey)
 	if !has {
 		return "", errors.New("There is not any latest election.")
 	}
-	uuid := s.db.Get(latestElection)
+	uuid := s.db.Get(latestElectionKey)
 	return string(uuid), nil
 }
 func (s *State) IsLatestElection(id string) bool {
-	uuid := s.db.Get(latestElection)
+	uuid := s.db.Get(latestElectionKey)
 	return string(uuid) == id
 }
 
@@ -112,6 +128,7 @@ func (s *State) AddVoteToThePoll(vd VoteDeliveryData) error {
 	} else {
 		ps.Choices[vd.Choice] += 1
 	}
+
 	b, _ := json.Marshal(ps)
 	s.db.Set(prefixPoll(vd.PollHash), b)
 	return nil
@@ -129,20 +146,34 @@ func (s *State) CreatePoll(pd PollDeliveryData) {
 	}
 	b, _ := json.Marshal(ps)
 	s.db.Set(prefixPoll(ps.PollHash), b)
-	s.db.Set(latestPoll, []byte(ps.PollHash))
+	s.db.Set(latestPollKey, []byte(ps.PollHash))
+
+	curPlsB := s.db.Get(currentPollsKey)
+	curPls := []PollQuery{}
+	json.Unmarshal(curPlsB, &curPls)
+	curPls = append(curPls, PollQuery{PollHash: ps.PollHash})
+	curPlsBRes, _ := json.Marshal(curPls)
+	s.db.Set(currentPollsKey, curPlsBRes)
+}
+
+func (s *State) GetPolls() []PollQuery {
+	curPlsB := s.db.Get(currentPollsKey)
+	curPls := []PollQuery{}
+	json.Unmarshal(curPlsB, &curPls)
+	return curPls
 }
 
 func (s *State) GetLatestPoll() (string, error) {
-	has := s.db.Has(latestPoll)
+	has := s.db.Has(latestPollKey)
 	if !has {
 		return "", errors.New("There is not any latest poll.")
 	}
-	hash := s.db.Get(latestPoll)
+	hash := s.db.Get(latestPollKey)
 	return string(hash), nil
 }
 
 func (s *State) IsLatestPoll(id string) bool {
-	hash := s.db.Get(latestPoll)
+	hash := s.db.Get(latestPollKey)
 	return string(hash) == id
 }
 

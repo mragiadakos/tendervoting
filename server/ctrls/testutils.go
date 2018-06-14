@@ -1,7 +1,6 @@
 package ctrls
 
 import (
-	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
@@ -16,9 +15,6 @@ import (
 )
 
 func forTestCreateElection(t *testing.T, app *TVApplication, privk crypto.PrivKey, voters []string) string {
-	privk, _, err := crypto.GenerateEd25519Key(rand.Reader)
-	assert.Nil(t, err)
-
 	pubB, _ := privk.GetPublic().Bytes()
 
 	ed := ElectionDeliveryData{}
@@ -43,9 +39,7 @@ func forTestCreateElection(t *testing.T, app *TVApplication, privk crypto.PrivKe
 	return ed.ID
 }
 
-func forTestCreatePoll(t *testing.T, app *TVApplication, privk crypto.PrivKey, voters []string, choices map[string]string) string {
-	electionID := forTestCreateElection(t, app, privk, voters)
-
+func forTestCreatePoll(t *testing.T, app *TVApplication, privk crypto.PrivKey, electionID string, choices map[string]string) string {
 	pubB, _ := privk.GetPublic().Bytes()
 	pd := PollDeliveryData{}
 	pd.From = hex.EncodeToString(pubB)
@@ -82,4 +76,25 @@ func forTestCreatePoll(t *testing.T, app *TVApplication, privk crypto.PrivKey, v
 	resp := app.DeliverTx(tx)
 	assert.Equal(t, CodeTypeOK, resp.Code)
 	return pd.PollHash
+}
+
+func forTestCreateVote(t *testing.T, app *TVApplication, privk crypto.PrivKey, election, poll, choice string) {
+	pubB, _ := privk.GetPublic().Bytes()
+
+	vd := VoteDeliveryData{}
+	vd.From = hex.EncodeToString(pubB)
+	vd.PollHash = poll
+	vd.Choice = choice
+	b, _ := json.Marshal(vd)
+	sign, err := privk.Sign(b)
+	assert.Nil(t, err)
+
+	tvd := TVDelivery{}
+	tvd.Type = VOTE
+	tvd.Signature = sign
+	tvd.Data = &vd
+
+	tx, _ := json.Marshal(tvd)
+	resp := app.DeliverTx(tx)
+	assert.Equal(t, CodeTypeOK, resp.Code)
 }

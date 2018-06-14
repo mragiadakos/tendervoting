@@ -73,7 +73,8 @@ func TestVoteFailOnVoterNotInTheElection(t *testing.T) {
 
 	vd := VoteDeliveryData{}
 	vd.From = hex.EncodeToString(pubB)
-	vd.PollHash = forTestCreatePoll(t, app, privk, []string{hex.EncodeToString(otherPubB)}, map[string]string{"k": "k"})
+	electionID := forTestCreateElection(t, app, privk, []string{hex.EncodeToString(otherPubB)})
+	vd.PollHash = forTestCreatePoll(t, app, privk, electionID, map[string]string{"k": "k"})
 
 	b, _ := json.Marshal(vd)
 	sign, err := privk.Sign(b)
@@ -98,7 +99,9 @@ func TestVoteFailOnChoiceThatDoesNotexists(t *testing.T) {
 
 	vd := VoteDeliveryData{}
 	vd.From = hex.EncodeToString(pubB)
-	vd.PollHash = forTestCreatePoll(t, app, privk, []string{vd.From}, map[string]string{"k": "k"})
+	electionID := forTestCreateElection(t, app, privk, []string{vd.From})
+
+	vd.PollHash = forTestCreatePoll(t, app, privk, electionID, map[string]string{"k": "k"})
 	vd.Choice = "non-existent-choice"
 	b, _ := json.Marshal(vd)
 	sign, err := privk.Sign(b)
@@ -123,7 +126,9 @@ func TestVoteFailOnReVotingOnTheSamePoll(t *testing.T) {
 
 	vd := VoteDeliveryData{}
 	vd.From = hex.EncodeToString(pubB)
-	pollHash := forTestCreatePoll(t, app, privk, []string{vd.From}, map[string]string{"a": "a", "b": "b"})
+	electionID := forTestCreateElection(t, app, privk, []string{vd.From})
+
+	pollHash := forTestCreatePoll(t, app, privk, electionID, map[string]string{"a": "a", "b": "b"})
 
 	vd.PollHash = pollHash
 	vd.Choice = "a"
@@ -168,9 +173,11 @@ func TestVoteFailOnNotLatestPoll(t *testing.T) {
 
 	vd := VoteDeliveryData{}
 	vd.From = hex.EncodeToString(pubB)
-	oldPollHash := forTestCreatePoll(t, app, privk, []string{vd.From}, map[string]string{"a": "a", "b": "b"})
+	electionID := forTestCreateElection(t, app, privk, []string{vd.From})
+
+	oldPollHash := forTestCreatePoll(t, app, privk, electionID, map[string]string{"a": "a", "b": "b"})
 	// new poll hash
-	forTestCreatePoll(t, app, privk, []string{vd.From}, map[string]string{"1": "1", "2": "2"})
+	forTestCreatePoll(t, app, privk, electionID, map[string]string{"1": "1", "2": "2"})
 
 	vd.PollHash = oldPollHash
 	vd.Choice = "a"
@@ -197,7 +204,9 @@ func TestVoteSuccessful(t *testing.T) {
 
 	vd := VoteDeliveryData{}
 	vd.From = hex.EncodeToString(pubB)
-	pollHash := forTestCreatePoll(t, app, privk, []string{vd.From}, map[string]string{"a": "a", "b": "b"})
+	electionID := forTestCreateElection(t, app, privk, []string{vd.From})
+
+	pollHash := forTestCreatePoll(t, app, privk, electionID, map[string]string{"a": "a", "b": "b"})
 
 	vd.PollHash = pollHash
 	vd.Choice = "a"
