@@ -48,8 +48,8 @@ func (app *TVApplication) verifyDelivery(tvd TVDelivery) (uint32, error) {
 		if err != nil {
 			return CodeTypeUnauthorized, err
 		}
-		_, err = app.state.GetPoll(d.PollHash)
-		if err == nil {
+		has := app.state.HasPoll(d.PollHash)
+		if has {
 			return CodeTypeUnauthorized, errors.New("The poll's hash exists.")
 		}
 		if !app.state.IsLatestElection(d.ElectionID) {

@@ -28,6 +28,7 @@ type jsonRpcResponseForDelivery struct {
 }
 
 type deliveryTx struct {
+	CheckTx    types.ResponseCheckTx   `json:"check_tx"`
 	DeliveryTx types.ResponseDeliverTx `json:"deliver_tx"`
 	Height     int                     `json:"height"`
 	Hash       string                  `json:"hash"`
@@ -84,7 +85,9 @@ func RpcBroadcastCommit(deliveryB []byte) (*types.ResponseDeliverTx, error) {
 	if jresp.Error != nil {
 		return nil, errors.New(jresp.Error.Message + ": " + jresp.Error.Data)
 	}
-
+	if jresp.Result.CheckTx.Code > 0 {
+		return nil, errors.New(jresp.Result.CheckTx.Log)
+	}
 	return &jresp.Result.DeliveryTx, nil
 }
 

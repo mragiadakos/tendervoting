@@ -116,6 +116,10 @@ func (s *State) GetPoll(hash string) (*PollState, error) {
 	return &ps, nil
 }
 
+func (s *State) HasPoll(hash string) bool {
+	return s.db.Has(prefixPoll(hash))
+}
+
 func (s *State) AddVoteToThePoll(vd VoteDeliveryData) error {
 	ps, err := s.GetPoll(vd.PollHash)
 	if err != nil {
