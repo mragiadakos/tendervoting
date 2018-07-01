@@ -8,5 +8,5 @@ type configuration struct {
 var Conf = configuration{}
 
 func init() {
-	Conf.NodeDaemon = "http://localhost:46657"
+	Conf.NodeDaemon = "http://0.0.0.0:26657"
 }

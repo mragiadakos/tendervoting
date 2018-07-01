@@ -11,7 +11,6 @@ import (
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/mragiadakos/tendervoting/server/ctrls"
 	uuid "github.com/satori/go.uuid"
-	"github.com/tendermint/abci/types"
 	"github.com/urfave/cli"
 )
 
@@ -87,7 +86,7 @@ var CreateElectionCommand = cli.Command{
 		b, _ = json.Marshal(tvd)
 		_, err = deliver(b)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
+			return err
 		}
 		fmt.Println("The election submitted with ID", edd.ID)
 		return nil
@@ -150,7 +149,7 @@ var AddPollCommand = cli.Command{
 		b, _ = json.Marshal(tvd)
 		_, err = deliver(b)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
+			return err
 		}
 		fmt.Println("The poll submitted")
 		return nil
@@ -213,7 +212,7 @@ var VoteCommand = cli.Command{
 		b, _ = json.Marshal(tvd)
 		_, err = deliver(b)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
+			return err
 		}
 		fmt.Println("The vote submitted")
 		return nil
@@ -226,17 +225,12 @@ var QueryElectionsCommand = cli.Command{
 	Aliases: []string{"e"},
 	Usage:   "list the election's IDs",
 	Action: func(c *cli.Context) error {
-		req := types.RequestQuery{}
-		req.Path = "/elections"
-		resp, err := RpcQuery(req)
+		value, err := query("/elections", nil)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
-		}
-		if resp.Code > CodeTypeOK {
-			return errors.New("Error :" + resp.Log)
+			return err
 		}
 		les := ctrls.ListElectionQuery{}
-		json.Unmarshal(resp.Value, &les)
+		json.Unmarshal(value, &les)
 		for _, v := range les {
 			fmt.Println("Election ID:", v.ID)
 			fmt.Println("Latest:", v.Latest)
@@ -252,18 +246,13 @@ var QueryLatestElectionCommand = cli.Command{
 	Aliases: []string{"le"},
 	Usage:   "get the latest election's IDs",
 	Action: func(c *cli.Context) error {
-		req := types.RequestQuery{}
-		req.Path = "/elections/latest"
-		resp, err := RpcQuery(req)
+		value, err := query("/elections/latest", nil)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
+			return err
 		}
 
-		if resp.Code > CodeTypeOK {
-			return errors.New("Error :" + resp.Log)
-		}
 		v := ctrls.ItemElectionQuery{}
-		json.Unmarshal(resp.Value, &v)
+		json.Unmarshal(value, &v)
 		fmt.Println("Election ID:", v.ID)
 		fmt.Println("Latest:", v.Latest)
 		fmt.Println("Number of voters:", v.NumberOfVoters)
@@ -278,18 +267,14 @@ var QueryPollsCommand = cli.Command{
 	Aliases: []string{"p"},
 	Usage:   "list the poll's hash keys",
 	Action: func(c *cli.Context) error {
-		req := types.RequestQuery{}
-		req.Path = "/polls"
-		resp, err := RpcQuery(req)
+
+		value, err := query("/polls", nil)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
+			return err
 		}
 
-		if resp.Code > CodeTypeOK {
-			return errors.New("Error :" + resp.Log)
-		}
 		pes := ctrls.ListPollQuery{}
-		json.Unmarshal(resp.Value, &pes)
+		json.Unmarshal(value, &pes)
 		for _, v := range pes {
 			fmt.Println("Poll's Hash:", v.PollHash)
 			fmt.Println("Latest:", v.Latest)
@@ -305,18 +290,13 @@ var QueryLatestPollCommand = cli.Command{
 	Aliases: []string{"lp"},
 	Usage:   "get the latest poll's hash key",
 	Action: func(c *cli.Context) error {
-		req := types.RequestQuery{}
-		req.Path = "/polls/latest"
-		resp, err := RpcQuery(req)
+		value, err := query("/polls/latest", nil)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
+			return err
 		}
 
-		if resp.Code > CodeTypeOK {
-			return errors.New("Error :" + resp.Log)
-		}
 		v := ctrls.ItemPollQuery{}
-		json.Unmarshal(resp.Value, &v)
+		json.Unmarshal(value, &v)
 		fmt.Println("Poll's Hash:", v.PollHash)
 		fmt.Println("Latest:", v.Latest)
 		fmt.Println()
@@ -340,20 +320,15 @@ var QueryResultsCommand = cli.Command{
 		if len(hash) == 0 {
 			return errors.New("Error: hash is missing")
 		}
-		req := types.RequestQuery{}
-		req.Path = "/votes"
+
 		b, _ := json.Marshal(ctrls.PollQuery{PollHash: hash})
-		req.Data = b
-		resp, err := RpcQuery(req)
+		value, err := query("/votes", b)
 		if err != nil {
-			return errors.New("Error: " + err.Error())
+			return err
 		}
 
-		if resp.Code > CodeTypeOK {
-			return errors.New("Error :" + resp.Log)
-		}
 		v := ctrls.PollVotesQuery{}
-		json.Unmarshal(resp.Value, &v)
+		json.Unmarshal(value, &v)
 		for k, n := range v.Choices {
 			fmt.Println("Votes for choice '"+k+"':", n)
 		}
